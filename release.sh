@@ -1,20 +1,23 @@
-echo "Builiding DAUW"
-go build -o build/DAUW
-echo "Builiding DAUW.exe"
-GOOS=windows go build -o build/DAUW.exe
-echo "Builiding DAUW_freebsd"
-GOOS=freebsd go build -o build/DAUW_freebsd
+app="DAUW"
+files="config.example.json"
+
+echo "Builiding $app"
+go build -o build/$app
+echo "Builiding $app.exe"
+GOOS=windows go build -o build/$app.exe
+echo "Builiding "$app"_freebsd"
+GOOS=freebsd go build -o build/"$app"_freebsd
 
 mkdir -p release
-echo "Creating DAUW_linux_amd64.zip"
-cp build/DAUW DAUW
-zip -r release/DAUW_linux_amd64.zip DAUW config.example.json
-rm DAUW
-echo "Creating DAUW_windows_amd64.zip"
-cp build/DAUW.exe DAUW.exe
-zip -r release/DAUW_windows_amd64.zip DAUW.exe config.example.json
-rm DAUW.exe
-echo "Creating DAUW_freebsd_amd64.zip"
-cp build/DAUW_freebsd DAUW_freebsd
-zip -r release/DAUW_freebsd_amd64.zip DAUW_freebsd config.example.json
-rm DAUW_freebsd
+echo "Creating "$app"_linux_amd64.zip"
+cp build/$app ./
+zip -r release/"$app"_linux_amd64.zip $app $files
+rm $app
+echo "Creating "$app"_windows_amd64.zip"
+cp build/$app.exe ./
+zip -r release/"$app"_windows_amd64.zip $app.exe $files
+rm $app.exe
+echo "Creating "$app"_freebsd_amd64.zip"
+cp build/"$app"_freebsd ./
+zip -r release/"$app"_freebsd_amd64.zip "$app"_freebsd $files
+rm "$app"_freebsd
