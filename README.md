@@ -1,8 +1,8 @@
 # DAUW (discord-android-update-webhook)
 Send Webhook when Discord for Android has new update
 
-Can be configured to any app in play store, just change `com.discord` to other app in `main.go`
+This use apkmirror, because apkmirror has beta builds
 
 Preview:
 
-![preview](https://i.imgur.com/3EeVNX9.png)
+![preview](https://i.imgur.com/Nmi6HCF.png)

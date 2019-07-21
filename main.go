@@ -4,14 +4,13 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"html"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"strings"
 	"time"
 
-	scraper "github.com/juby210-PL/google-play-scraper"
+	"github.com/PuerkitoBio/goquery"
 )
 
 // Config .
@@ -23,8 +22,7 @@ type Config struct {
 
 // Cache .
 type Cache struct {
-	LastVersion   string
-	LastChangelog string
+	LastVersion string
 }
 
 var config Config
@@ -58,34 +56,41 @@ func log(msg string) {
 
 func check() {
 	log("Checking for new update..")
-	app, err := scraper.GetApp("com.discord")
+
+	client := &http.Client{}
+	r, _ := http.NewRequest("GET", "https://www.apkmirror.com/uploads/?q=discord-chat-for-gamers", nil)
+	r.Header.Add("User-Agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.103 Safari/537.36 OPR/60.0.3255.170")
+	resp, err := client.Do(r)
+	if err != nil {
+		log("[ERROR] " + err.Error())
+		return
+	}
+	defer resp.Body.Close()
+	doc, err := goquery.NewDocumentFromReader(resp.Body)
+
 	if err != nil {
 		log("[ERROR] " + err.Error())
 	} else {
-		if cache.LastVersion != "" || config.SendIfEmptyCache {
-			if cache.LastVersion != app.Version || cache.LastChangelog != app.WhatsNew {
+		appVer := strings.Replace(doc.Find(".infoslide-value").First().Text(), " ", "", -1)
+
+		if cache.LastVersion != appVer {
+			if cache.LastVersion != "" || config.SendIfEmptyCache {
 				bd := map[string]interface{}{"embeds": []map[string]interface{}{map[string]interface{}{
 					"author": map[string]string{
-						"name":     app.Name,
-						"icon_url": app.IconURL,
-						"url":      "https://play.google.com/store/apps/details?id=com.discord",
+						"name":     strings.Replace(doc.Find("a.fontBlack").First().Text(), doc.Find(".infoslide-value").First().Text(), "", 1),
+						"icon_url": "https://lh3.googleusercontent.com/_4zBNFjA8S9yjNB_ONwqBvxTvyXYdC7Nh1jYZ2x6YEcldBr2fyijdjM2J5EoVdTpnkA=s180-rw",
+						"url":      "https://play.google.com/store/apps/details?id=com.discord&hl=en",
 					},
-					"title":       "New version: **" + app.Version + "**",
-					"description": strings.Replace(html.UnescapeString(app.WhatsNewHTML), "<br/>", "\n", -1),
-					"footer": map[string]string{
-						"text": "Updated " + app.Updated,
-					},
-					"color": 7506394,
+					"title":       "New version: **" + appVer + "**",
+					"description": "Updated: " + doc.Find("span.datetime_utc").First().Text(),
+					"color":       7506394,
 				}}}
 				body, _ := json.Marshal(bd)
-				log("Found new version " + app.Version + ", Sending")
+				log("Found new version " + appVer + ", Sending")
 				http.Post(config.Webhook, "application/json", bytes.NewReader(body))
 			}
-		}
 
-		if cache.LastVersion != app.Version || cache.LastChangelog != app.WhatsNew {
-			cache.LastVersion = app.Version
-			cache.LastChangelog = app.WhatsNew
+			cache.LastVersion = appVer
 			b, _ := json.Marshal(cache)
 			ioutil.WriteFile("cache.json", b, 0644)
 		}
